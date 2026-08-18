@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tubewrap</title>
+<style>
+  :root{
+    --bg: #0d0f0c;
+    --bg-panel: #14170f;
+    --line: #2a2f22;
+    --accent: #c9ff5c;
+    --accent-dim: #8fae3f;
+    --text: #eef0e6;
+    --text-dim: #8b9280;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    min-height:100vh;
+  }
+  .wrap{ max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  header{ margin-bottom: 28px; }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin: 0 0 8px;
+  }
+  h1{
+    font-size: 30px;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .sub{ color: var(--text-dim); font-size: 14px; margin:0; }
+
+  .keyrow{
+    display:flex;
+    gap:8px;
+    margin: 20px 0 24px;
+    padding: 10px 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    align-items:center;
+  }
+  .keyrow label{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .keyrow input{
+    flex:1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+  }
+  .keyrow input::placeholder{ color: #4c5140; }
+  .keystatus{ font-family: var(--mono); font-size: 10px; color: var(--accent-dim); }
+  .keyrow select{
+    flex:1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+  }
+  .keyrow select option{ background: var(--bg-panel); color: var(--text); }
+
+  form.search{
+    display:flex;
+    gap:10px;
+    margin-bottom: 8px;
+  }
+  .search input[type="text"]{
+    flex:1;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: var(--display);
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  .search input[type="text"]:focus{ border-color: var(--accent-dim); }
+  .search button{
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 0 22px;
+    color: #0d0f0c;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: var(--display);
+    transition: transform .1s ease, background .15s ease;
+  }
+  .search button:hover{ background: #d9ffb0; }
+  .search button:active{ transform: scale(0.97); }
+  .search button:disabled{ opacity:0.5; cursor: default; }
+
+  .hint{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0 0 28px;
+  }
+  .hint code{ color: var(--accent-dim); }
+
+  #player-stage{ display:none; margin-bottom: 28px; }
+  .player-frame{
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .player-frame iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0;
+  }
+  .player-meta{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-top: 10px;
+    gap: 12px;
+  }
+  .player-meta h2{
+    font-size: 15px;
+    margin:0;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .closebtn{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .closebtn:hover{ color: var(--text); border-color: var(--accent-dim); }
+
+  .results-label{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+  }
+  #results{
+    display:flex;
+    flex-direction:column;
+    gap: 8px;
+  }
+  .result{
+    display:flex;
+    gap: 14px;
+    padding: 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align:left;
+    background: transparent;
+    align-items:flex-start;
+    width:100%;
+  }
+  .result:hover{ background: var(--bg-panel); border-color: var(--line); }
+  .result img{
+    width: 140px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink:0;
+    background: #1a1c14;
+  }
+  .result .meta{ min-width:0; padding-top:2px; }
+  .result .title{
+    font-size: 14px;
+    line-height:1.4;
+    margin: 0 0 4px;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .result .channel{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin:0;
+  }
+
+  .empty, .error, .loading{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 20px 0;
+  }
+  .error{ color: #ff8a65; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">// tubewrap</p>
+    <h1>Search. Wrap. Watch.</h1>
+    <p class="sub">Finds 10 results, plays them in an embedded frame instead of linking out.</p>
+  </header>
+
+  <div class="keyrow">
+    <label for="apikey">API key</label>
+    <input id="apikey" type="password" placeholder="paste your YouTube Data API v3 key" autocomplete="off" value="AIzaSyDw4s9ASCWAavyy2e0WMbd8ZRJJI5ud-w0">
+    <span class="keystatus" id="keystatus"></span>
+  </div>
+
+  <form class="search" id="searchform">
+    <input type="text" id="q" placeholder="Search for a video…" autocomplete="off">
+    <button type="submit" id="searchbtn">Search</button>
+  </form>
+  <div class="keyrow" style="margin-bottom:24px;">
+    <label for="sourcepick">Embed source</label>
+    <select id="sourcepick"></select>
+  </div>
+  <p class="hint" id="sourcehint"></p>
+
+  <div id="player-stage">
+    <div class="player-frame" id="player-frame"></div>
+    <div class="player-meta">
+      <h2 id="now-playing"></h2>
+      <button class="closebtn" id="closeplayer">✕ close</button>
+    </div>
+  </div>
+
+  <p class="results-label">results</p>
+  <div id="results">
+    <p class="empty">Nothing yet — search above.</p>
+  </div>
+
+</div>
+
+<script>
+const qInput = document.getElementById('q');
+const form = document.getElementById('searchform');
+const resultsEl = document.getElementById('results');
+const apiKeyInput = document.getElementById('apikey');
+const keystatus = document.getElementById('keystatus');
+const searchbtn = document.getElementById('searchbtn');
+const playerStage = document.getElementById('player-stage');
+const playerFrame = document.getElementById('player-frame');
+const nowPlaying = document.getElementById('now-playing');
+const closeBtn = document.getElementById('closeplayer');
+const sourcePick = document.getElementById('sourcepick');
+const sourceHint = document.getElementById('sourcehint');
+
+// Two real YouTube embed hosts, plus a few currently-listed public Invidious
+// instances (these come and go — Google actively blocks Invidious IPs, so
+// if one is dead, just pick another from the dropdown).
+const SOURCES = [
+  { id: 'yt-nocookie', label: 'youtube-nocookie.com (official, privacy-enhanced)',
+    build: (id) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` },
+  { id: 'yt', label: 'youtube.com/embed (official)',
+    build: (id) => `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` },
+  { id: 'inv-yewtu', label: 'yewtu.be (Invidious)',
+    build: (id) => `https://yewtu.be/embed/${id}?autoplay=1` },
+  { id: 'inv-nadeko', label: 'inv.nadeko.net (Invidious)',
+    build: (id) => `https://inv.nadeko.net/embed/${id}?autoplay=1` },
+  { id: 'inv-nerdvpn', label: 'invidious.nerdvpn.de (Invidious)',
+    build: (id) => `https://invidious.nerdvpn.de/embed/${id}?autoplay=1` },
+  { id: 'inv-tiekoetter', label: 'invidious.tiekoetter.com (Invidious)',
+    build: (id) => `https://invidious.tiekoetter.com/embed/${id}?autoplay=1` },
+  { id: 'inv-pixora', label: 'inv.thepixora.com (Invidious)',
+    build: (id) => `https://inv.thepixora.com/embed/${id}?autoplay=1` },
+  { id: 'inv-choco', label: 'yt.chocolatemoo53.com (Invidious)',
+    build: (id) => `https://yt.chocolatemoo53.com/embed/${id}?autoplay=1` },
+  { id: 'inv-exonip', label: 'invidious.exonip.de (Invidious)',
+    build: (id) => `https://invidious.exonip.de/embed/${id}?autoplay=1` },
+  { id: 'inv-segfault', label: 'invidious.projectsegfau.lt (Invidious)',
+    build: (id) => `https://invidious.projectsegfau.lt/embed/${id}?autoplay=1` },
+];
+
+SOURCES.forEach((s, i) => {
+  const opt = document.createElement('option');
+  opt.value = s.id;
+  opt.textContent = s.label;
+  sourcePick.appendChild(opt);
+});
+
+function currentSource(){
+  return SOURCES.find(s => s.id === sourcePick.value) || SOURCES[0];
+}
+
+function updateHint(){
+  const s = currentSource();
+  if (s.id.startsWith('inv-')) {
+    sourceHint.innerHTML = `Third-party Invidious mirror — not run by Google or Anthropic, uptime varies. If it doesn't load, switch sources above.`;
+  } else {
+    sourceHint.innerHTML = `Official YouTube embed endpoint.`;
+  }
+}
+sourcePick.addEventListener('change', updateHint);
+updateHint();
+
+apiKeyInput.addEventListener('input', () => {
+  keystatus.textContent = apiKeyInput.value.trim() ? 'key set ●' : '';
+});
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+async function doSearch(query){
+  const key = apiKeyInput.value.trim();
+  if (!key) {
+    resultsEl.innerHTML = '<p class="error">Add your YouTube Data API v3 key above first.</p>';
+    return;
+  }
+  if (!query) return;
+
+  resultsEl.innerHTML = '<p class="loading">searching…</p>';
+  searchbtn.disabled = true;
+
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(query)}&key=${encodeURIComponent(key)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || `Request failed (${res.status})`;
+      resultsEl.innerHTML = `<p class="error">${escapeHtml(msg)}</p>`;
+      return;
+    }
+
+    const items = data.items || [];
+    if (items.length === 0) {
+      resultsEl.innerHTML = '<p class="empty">No results.</p>';
+      return;
+    }
+
+    resultsEl.innerHTML = '';
+    items.forEach(item => {
+      const videoId = item.id.videoId;
+      const title = item.snippet.title;
+      const channel = item.snippet.channelTitle;
+      const thumb = item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url;
+
+      const btn = document.createElement('button');
+      btn.className = 'result';
+      btn.innerHTML = `
+        <img src="${thumb}" alt="">
+        <div class="meta">
+          <p class="title">${escapeHtml(title)}</p>
+          <p class="channel">${escapeHtml(channel)}</p>
+        </div>
+      `;
+      btn.addEventListener('click', () => playVideo(videoId, title));
+      resultsEl.appendChild(btn);
+    });
+  } catch (err) {
+    resultsEl.innerHTML = `<p class="error">Network error: ${escapeHtml(String(err))}</p>`;
+  } finally {
+    searchbtn.disabled = false;
+  }
+}
+
+function playVideo(videoId, title){
+  const src = currentSource().build(videoId);
+  playerFrame.innerHTML = `<iframe src="${src}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  nowPlaying.textContent = title;
+  playerStage.style.display = 'block';
+  playerStage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+closeBtn.addEventListener('click', () => {
+  playerFrame.innerHTML = '';
+  playerStage.style.display = 'none';
+});
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  doSearch(qInput.value.trim());
+});
+</script>
+</body>
+</html>
